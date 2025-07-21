@@ -129,6 +129,9 @@ def find_file_and_line(name):
     return None, None
 
 def linkcode_resolve(domain, info):
+    print("linkcode_resolve CALLED")
+    print(f"domain = {domain}, fullname = {info.get('fullname')}")
+
     if domain != "cpp":
         return None
 
