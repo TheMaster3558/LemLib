@@ -19,6 +19,7 @@ extensions = [
     'sphinx_copybutton',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.todo',
+    'sphinx.ext.linkcode'
 ]
 
 templates_path = ['_templates']
@@ -88,3 +89,59 @@ read_the_docs_build = os.environ.get('READTHEDOCS', None) == 'True'
 
 if read_the_docs_build:
      subprocess.call('cd ../doxygen; doxygen', shell=True)
+
+
+import os
+import xml.etree.ElementTree as ET
+
+# Customize these
+GITHUB_BASE_URL = "https://github.com/lemlib/lemlib/blob/stable/"
+PROJECT_ROOT = os.path.abspath("../../")  # adjust to match root
+DOXYGEN_XML_DIR = os.path.abspath("docs/xml")
+
+def find_file_and_line(name):
+    """
+    Find the source file and line number for a function or class using Doxygen XML.
+    """
+    for filename in os.listdir(DOXYGEN_XML_DIR):
+        if not filename.endswith(".xml"):
+            continue
+        path = os.path.join(DOXYGEN_XML_DIR, filename)
+        try:
+            tree = ET.parse(path)
+        except ET.ParseError:
+            continue
+
+        root = tree.getroot()
+
+        # <compounddef kind="class"> or <memberdef kind="function">
+        for member in root.findall(".//memberdef"):
+            if member.get("kind") not in ("function", "class", "variable"):
+                continue
+
+            qualified = member.findtext("qualifiedname")
+            if qualified and qualified.endswith(name):
+                location = member.find("location")
+                if location is not None:
+                    file_path = location.get("file")
+                    line = location.get("line")
+                    return file_path, line
+    return None, None
+
+def linkcode_resolve(domain, info):
+    if domain != "cpp":
+        return None
+
+    fullname = info.get("fullname")
+    if not fullname:
+        return None
+
+    file_path, line = find_file_and_line(fullname)
+    if not file_path or not line:
+        return None
+
+    # Normalize path for GitHub (strip local path to make relative)
+    rel_path = os.path.relpath(file_path, PROJECT_ROOT).replace("\\", "/")
+
+    return f"{GITHUB_BASE_URL}{rel_path}#L{line}"
+
