@@ -47,6 +47,7 @@ html_theme_options = {
         "color-brand-content": "#00C852",
 
     },
+    'accent_color': 'grass'
 }
 
 html_static_path = ['_static']
