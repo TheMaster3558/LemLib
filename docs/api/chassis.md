@@ -3,6 +3,7 @@
 ## Chassis
 
 ```{doxygenclass} lemlib::Chassis
+:project: LemLib
 :members:
 ```
 
